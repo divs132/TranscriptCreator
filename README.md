@@ -12,25 +12,26 @@ Usage:
 from INNO_TranscriptCreator import TranscriptCreator
 
 Directory Structure created is
-Main Directory
+
+-Main Directory
 - Checkpoints
-- -Bert-Base-Cased-MLM
-- -Diarization
-- -HUBERT_Audio_to_Text
-- -punctuation_en_bert
-- -subwordbert-probwordnoise
-- -Wav2Vec2ProcessorwithLM
+- ---Bert-Base-Cased-MLM
+- ---Diarization
+- ---HUBERT_Audio_to_Text
+- ---punctuation_en_bert
+- ---subwordbert-probwordnoise
+- ---Wav2Vec2ProcessorwithLM
 - Topic Name
-- -Beam Lm
-- -Bert MLM
-- -HuBERT
-- -Punctuation
-- -SpellCheck
+- ---Beam Lm
+- ---Bert MLM
+- ---HuBERT
+- ---Punctuation
+- ---SpellCheck
 - Video Name
-- -Video
-- -Audio
-- -Tracks based on Diarization
-- -Pickle Files for faster reloading
+- ---Video
+- ---Audio
+- ---Tracks based on Diarization
+- ---Pickle Files for faster reloading
 
 abc = INNO_TranscriptCreator.TranscriptCreator(videopath = "S2.mp4",topic = 'Computer Science)
 
