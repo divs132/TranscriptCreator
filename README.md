@@ -49,3 +49,9 @@ abc1 = INNO_TranscriptCreator.TranscriptCreator(videopath = "S3.mp4")
 
 abc1.create_transcript()
 
+
+#Edits coming up
+
+#Evaluate Functions for direct WER metrics
+
+#Finetune functions
