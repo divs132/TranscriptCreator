@@ -1,6 +1,10 @@
 # TranscriptCreator
 Transcript Creation Project for Video to Text
 
+#Data and Checkpoints available at
+https://drive.google.com/drive/folders/12lbjthkwMM3quCmC4vPZciYY6C4A7Y-R?usp=sharing
+
+
 
 Usage:
 
