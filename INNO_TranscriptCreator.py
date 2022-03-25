@@ -56,7 +56,7 @@ class TranscriptCreator():
         if diarize:
             self.diarization()
             torch.cuda.empty_cache()
-            self.separatetracks()
+            self.separatetracks(self.diarized)
             torch.cuda.empty_cache()
             self.speechtotext()
             torch.cuda.empty_cache()
@@ -67,7 +67,9 @@ class TranscriptCreator():
             self.spellcheck()
             torch.cuda.empty_cache()
         else:
-            self.tracks = [os.path.join(self.directory,'audio.wav')]
+            self.vad_detection()
+            torch.cuda.empty_cache()
+            self.separatetracks(self.vad)
             self.speechtotext()
             torch.cuda.empty_cache()
             self.full_punctuate()
@@ -86,9 +88,14 @@ class TranscriptCreator():
         
         if not os.path.exists(os.path.join(self.base_path,'Diarization/pipeline_checkpoint')):
             shutil.copytree(os.path.join(self.base_path,'Checkpoints/Diarization'), os.path.join(self.base_path,'Diarization'))
+
+        if not os.path.exists(os.path.join(self.base_path,'Voice_Activity_Detection/pipeline_checkpoint')):
+            shutil.copytree(os.path.join(self.base_path,'Checkpoints/Voice_Activity_Detection'), os.path.join(self.base_path,'Voice_Activity_Detection'))
         
         self.diarize_model_path = os.path.join(self.base_path,'Diarization')
         self.diarize_model_path = os.path.join(self.diarize_model_path,'pipeline_checkpoint')
+        self.vad_model_path = os.path.join(self.base_path,'Voice_Activity_Detection')
+        self.vad_model_path = os.path.join(self.vad_model_path,'pipeline_checkpoint')
 
     def initialize_topic(self,topicname):
         
@@ -125,8 +132,29 @@ class TranscriptCreator():
             self.diarized = self.diarize_model(self.audiopath)
             with open(self.diarize_path, 'wb') as pickle_file:
                 pickle.dump(self.diarized, pickle_file, pickle.HIGHEST_PROTOCOL)
+
+    def vad_detection(self,model = ''):
+        
+        if not model == '':
+            self.vad_model_path = model
+
+        
+        self.vad_path = os.path.join(self.directory,'vad.pkl')
+        if os.path.exists(self.vad_path):
+            print("PKL File Found")
+            self.New_Separation=False
+            with open(self.vad_path, 'rb') as inp:
+                self.vad = pickle.load(inp)   
+        else:
+            print("Doing Voice Activity Detection")
+            self.vad_model = Pipeline.from_pretrained(self.vad_model_path)
+            self.vad = self.vad_model(self.audiopath)
+            with open(self.vad_path, 'wb') as pickle_file:
+                pickle.dump(self.vad, pickle_file, pickle.HIGHEST_PROTOCOL)
    
-    def separatetracks(self,max_pause = 1.0, max_speakers = 1,maxduration=60,make_new = False):
+
+
+    def separatetracks(self,segment_input,max_pause = 1.0, max_speakers = 1,maxduration=60,make_new = False):
         self.speaker_dict={}
         self.tracks=list()
         if make_new:
@@ -138,7 +166,7 @@ class TranscriptCreator():
 
 
         data, fs = sf.read(self.audiopath)
-        for speech_turn, track, speaker in self.diarized.itertracks(yield_label=True):
+        for speech_turn, track, speaker in segment_input.itertracks(yield_label=True):
             if speaker in self.speaker_dict:
                 self.speaker_dict[speaker]['duration'] = self.speaker_dict[speaker]['duration'] + speech_turn.end - speech_turn.start
                 if self.speaker_dict[speaker]['tracklist'][-1]['end'] + max_pause >= speech_turn.start:
