@@ -36,10 +36,21 @@ Directory Structure created is
 abc = INNO_TranscriptCreator.TranscriptCreator(videopath = "S2.mp4",topic = 'Computer Science)
 
 #Using pyannote-audio pipeline and pretrained model
+
+Pipelines from pyannote-audio: 'Diarization' and 'Voice Activity Detection'
+https://github.com/pyannote/pyannote-audio
+
 abc.diarization()
+abc.vad_detection()
+
+https://github.com/pyannote/pyannote-audio/tree/develop/pyannote/audio/pipelines
 
 #separates tracks based on above diarization
 abc.separatetracks(max_pause=0.5)
+
+Separate Tracks based on Annotation Segments accessed by
+output_of_pipeline.itertracks()
+
 
 #Using the HUBERT CTC model (https://huggingface.co/docs/transformers/model_doc/hubert#transformers.HubertForCTC)
 
@@ -72,6 +83,12 @@ abc1 = INNO_TranscriptCreator.TranscriptCreator(videopath = "S3.mp4")
 #use create_transcript(diarize=True) to do diarization before converting speech to text
 
 abc1.create_transcript()
+
+
+
+For Human Review System
+
+
 
 
 #Edits coming up
