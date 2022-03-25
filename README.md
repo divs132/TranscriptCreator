@@ -45,6 +45,8 @@ abc.separatetracks(max_pause=0.5)
 
 #and https://huggingface.co/patrickvonplaten/wav2vec2-base-100h-with-lm/tree/main/language_model 
 
+#https://arxiv.org/pdf/2106.07447.pdf page 6 gives WER metrics of the needed
+
 #pre trained 4 gram language model and 
 
 #beam decoder CTC from https://github.com/kensho-technologies/pyctcdecode to convert waveform to text
