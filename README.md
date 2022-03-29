@@ -89,23 +89,37 @@ abc.correct_by_masking()
 
 abc.spellcheck()
 
-abc1 = INNO_TranscriptCreator.TranscriptCreator(videopath = "S3.mp4")
+abc = INNO_TranscriptCreator.TranscriptCreator(videopath = "S3.mp4")
 
 #use below function to create transcript directly without doing diarization
 
 #use create_transcript(diarize=True) to do diarization before converting speech to text
 
-abc1.create_transcript()
+abc.create_transcript()
 
 
 
+Using Batch Creation:
+You can use Batch_TranscriptCreator by giving a list of videopaths and corresponding video Ids to create transcripts of a batch of videos
+Then call create_transcript() on above batch creator to create the transcripts
+This will create the transcripts and will be available in:
+self.basic_model for  HuBERT output
 
+self.punctuated_op for Punctuated Output of BERT MLM model
+self.mlm_op for BERT MLM model
+self.spell_checked_op for Spell Checked Output of MLM model(only if do_spell_check=True in create_transcript())
+
+Using Evaluator for Metrics
+This only works for huggingface datasets
+just call the class with the dataset name (must be one from ['timit_asr','superb','librispeech_asr'])
+after creation of all transcripts
+call evaluate_metrics to get a list of all metrics
 
 
 
 For Human Review System
 
-
+#to be updated
 
 
 
