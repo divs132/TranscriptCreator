@@ -10,9 +10,9 @@ Current Word Error Metrics
 
 Dataset:Timit_ASR
 
-Base Model: 5.9
+Base Model: 2.5
 
-Final Output: 6.2
+Final Output: 2.1
 
 Datset Ami Corpus(To be revised)
 
