@@ -20,6 +20,12 @@ Base Model: 7.1
 
 Final Output: 5.9
 
+Dataset Mozilla Common Voice Dataset:
+
+Base Model: 28.44
+
+Final Output: 28.66
+
 
 Error Metrics are calculated with punctuated text instead of unpunctuated text.
 
