@@ -21,6 +21,7 @@ Directory Structure created is
 - ---punctuation_en_bert
 - ---subwordbert-probwordnoise
 - ---Wav2Vec2ProcessorwithLM
+- ---Voice_Activity_Detection
 - Topic Name
 - ---Beam Lm
 - ---Bert MLM
@@ -86,13 +87,16 @@ abc1.create_transcript()
 
 
 
+
+
+
+
 For Human Review System
 
 
 
 
-#Edits coming up
 
-#Evaluate Functions for direct WER metrics
+#Edits coming up
 
 #Finetune functions
