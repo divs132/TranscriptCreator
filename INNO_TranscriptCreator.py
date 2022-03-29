@@ -39,30 +39,56 @@ class TranscriptCreator_Evaluator:
         config_name='', video_topic = 'Computer Science',
         baserootpath = '/home/divyansh/Documents/Capstone',delete_folders = True,
         diarize = False,do_spell_check = False,max_test=0,
-        minimize_size=False):
-        if not dataset_name in ['timit_asr','superb','librispeech_asr']:
+        minimize_size=False,
+        upload_to_db=False):
+        if not dataset_name in ['timit_asr','superb','librispeech_asr','ami','common']:
             raise NotImplementedError("Please use one of the specified test dbs for the evaluator:'timit_asr','superb','librispeech_asr'",)
 
         if dataset_name == 'timit_asr':
             dbset = load_dataset('timit_asr',split='test')
         elif dataset_name == 'superb':
             dbset = load_dataset('superb','asr',split='test')
+        elif dataset_name == 'ami':
+            dbset = load_dataset('ami','headset-multi',split='test')
+        elif dataset_name == 'common':
+            dbset = load_dataset('csv', data_files=['/mnt/spare2/cv-corpus-8.0-2022-01-19-en.tar/cv-corpus-8.0-2022-01-19-en/cv-corpus-8.0-2022-01-19/en/test.csv'],split='train')
         else:
             dbset = load_dataset('librispeech_asr','clean',split='test')
 
-        vpaths = list(i['audio']['path'] for i in dbset)
-        gtruths = list(i['text'] for i in dbset)
-        v_ids = list(range(len(vpaths)))
-        v_ids = [str(a)+'_' + dataset_name for a in v_ids]
-        self.do_spell_check = do_spell_check
 
+        if not dataset_name=='common':
+            vpaths = list(i['audio']['path'] for i in dbset)
+            if dataset_name=='ami':
+                gtruths = list(" ".join(i['words']) for i in dbset)
+            else:
+                gtruths = list(i['text'] for i in dbset)
+            v_ids = list(range(len(vpaths)))
+            v_ids = [str(a)+'_' + dataset_name for a in v_ids]
+            
+        else:
+            vpaths=[]
+            gtruths=[]
+            v_ids=[]
+
+            cmn_base_path = '/mnt/spare2/cv-corpus-8.0-2022-01-19-en.tar/cv-corpus-8.0-2022-01-19-en/cv-corpus-8.0-2022-01-19/en/clips'
+            for i in range(0,dbset.num_rows-1):
+                path = os.path.join(cmn_base_path,dbset[i]['path'])
+                if os.path.exists(path) and not dbset[i]['sentence'] == None:
+                    vpaths.append(path)
+                    gtruths.append(dbset[i]['sentence'])
+                    v_ids.append(str(i) + '_common')
+
+
+
+
+        self.do_spell_check = do_spell_check
         if not max_test ==0:
             vpaths =vpaths[0:max_test]
             gtruths =gtruths[0:max_test]
             v_ids =v_ids[0:max_test]
 
         self.batcher = Batch_TranscriptCreator(videopaths = vpaths,video_ids = v_ids,groundtruths = gtruths,diarize=diarize,delete_folders=delete_folders,video_topic=video_topic,baserootpath=baserootpath)
-        self.batcher.create_transcript(do_spell_check=self.do_spell_check)
+        self.batcher.create_transcript(do_spell_check=self.do_spell_check,upload_to_db=upload_to_db)
         self.metrics = self.evaluate_metrics(self.batcher)
         
 
@@ -79,39 +105,39 @@ class TranscriptCreator_Evaluator:
             transformation=transformation
 
 
-        wer1 = jiwer.wer(btr.ground_truth, btr.basic_model,truth_transform=transformation,hypothesis_transform=transformation)
-        mer1 = jiwer.mer(btr.ground_truth, btr.basic_model,truth_transform=transformation,hypothesis_transform=transformation)
-        wil1 = jiwer.wil(btr.ground_truth, btr.basic_model,truth_transform=transformation,hypothesis_transform=transformation)
+        self.wer1 = jiwer.wer(btr.ground_truth, btr.basic_model,truth_transform=transformation,hypothesis_transform=transformation)
+        self.mer1 = jiwer.mer(btr.ground_truth, btr.basic_model,truth_transform=transformation,hypothesis_transform=transformation)
+        self.wil1 = jiwer.wil(btr.ground_truth, btr.basic_model,truth_transform=transformation,hypothesis_transform=transformation)
 
         #measures1 = jiwer.compute_measures(ground_truth, hypothesis)
 
-        wer2 = jiwer.wer(btr.ground_truth, btr.mlm_op,truth_transform=transformation,hypothesis_transform=transformation)
-        mer2 = jiwer.mer(btr.ground_truth, btr.mlm_op,truth_transform=transformation,hypothesis_transform=transformation)
-        wil2 = jiwer.wil(btr.ground_truth, btr.mlm_op,truth_transform=transformation,hypothesis_transform=transformation)
+        self.wer2 = jiwer.wer(btr.ground_truth, btr.mlm_op,truth_transform=transformation,hypothesis_transform=transformation)
+        self.mer2 = jiwer.mer(btr.ground_truth, btr.mlm_op,truth_transform=transformation,hypothesis_transform=transformation)
+        self.wil2 = jiwer.wil(btr.ground_truth, btr.mlm_op,truth_transform=transformation,hypothesis_transform=transformation)
 
         #measures2 = jiwer.compute_measures(ground_truth, hypothesis)
 
-        wer3 = jiwer.wer(btr.ground_truth, btr.punctuated_op,truth_transform=transformation,hypothesis_transform=transformation)
-        mer3 = jiwer.mer(btr.ground_truth, btr.punctuated_op,truth_transform=transformation,hypothesis_transform=transformation)
-        wil3 = jiwer.wil(btr.ground_truth, btr.punctuated_op,truth_transform=transformation,hypothesis_transform=transformation)
+        self.wer3 = jiwer.wer(btr.ground_truth, btr.punctuated_op,truth_transform=transformation,hypothesis_transform=transformation)
+        self.mer3 = jiwer.mer(btr.ground_truth, btr.punctuated_op,truth_transform=transformation,hypothesis_transform=transformation)
+        self.wil3 = jiwer.wil(btr.ground_truth, btr.punctuated_op,truth_transform=transformation,hypothesis_transform=transformation)
 
         #measures3 = jiwer.compute_measures(ground_truth, hypothesis)
         if self.do_spell_check:
-            wer4 = jiwer.wer(btr.ground_truth, btr.spell_checked_op,truth_transform=transformation,hypothesis_transform=transformation)
-            mer4 = jiwer.mer(btr.ground_truth, btr.spell_checked_op,truth_transform=transformation,hypothesis_transform=transformation)
-            wil4 = jiwer.wil(btr.ground_truth, btr.spell_checked_op,truth_transform=transformation,hypothesis_transform=transformation)
+            self.wer4 = jiwer.wer(btr.ground_truth, btr.spell_checked_op,truth_transform=transformation,hypothesis_transform=transformation)
+            self.mer4 = jiwer.mer(btr.ground_truth, btr.spell_checked_op,truth_transform=transformation,hypothesis_transform=transformation)
+            self.wil4 = jiwer.wil(btr.ground_truth, btr.spell_checked_op,truth_transform=transformation,hypothesis_transform=transformation)
 
             #measures4 = jiwer.compute_measures(ground_truth, hypothesis)
 
-            return dict(Hubert_WER = wer1,Punctuated_WER = wer3,MLM_WER = wer2,SpellChecked_WER = wer4)
+            return dict(Hubert_WER = self.wer1,Punctuated_WER = self.wer3,MLM_WER = self.wer2,SpellChecked_WER = self.wer4)
         else:
-            return dict(Hubert_WER = wer1,Punctuated_WER = wer3,MLM_WER = wer2)
+            return dict(Hubert_WER = self.wer1,Punctuated_WER = self.wer3,MLM_WER = self.wer2)
 
 
 
 
 class Batch_TranscriptCreator():
-    def __init__(self,videopaths,video_ids,video_topic = 'Computer Science',baserootpath = '/home/divyansh/Documents/Capstone',delete_folders = True,diarize = False,groundtruths = []):
+    def __init__(self,videopaths,video_ids,video_topic = 'Computer Science',baserootpath = '/home/divyansh/Documents/Capstone',delete_folders = True,diarize = False,groundtruths = [],upload_to_db=True):
 
         print('Converting ' + str(len(videopaths)) + ' Tracks')
         self.base_path = baserootpath
@@ -131,14 +157,14 @@ class Batch_TranscriptCreator():
         
 
 
-    def create_transcript(self,do_spell_check=False,minimize_size=False):
+    def create_transcript(self,do_spell_check=False,minimize_size=False,upload_to_db=True):
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         if self.do_diarization:
             from pyannote.audio import Pipeline
             diarize_model = Pipeline.from_pretrained(self.diarize_model_path)
             i=0
             for videopath in self.videopaths:
-                temp_tcr = TranscriptCreator(videopath,video_topic=self.video_topic,video_id=self.video_ids[i],minimize_size=minimize_size)
+                temp_tcr = TranscriptCreator(videopath,video_topic=self.video_topic,video_id=self.video_ids[i],minimize_size=minimize_size,upload_to_db=upload_to_db)
                 temp_tcr.diarization(diarize_model)
                 temp_tcr.separatetracks(temp_tcr.diarized)
                 i=i+1
@@ -154,7 +180,7 @@ class Batch_TranscriptCreator():
             vad_model = Pipeline.from_pretrained(self.vad_model_path)
             i=0
             for videopath in self.videopaths:
-                temp_tcr = TranscriptCreator(videopath,video_topic=self.video_topic,video_id=self.video_ids[i],minimize_size=minimize_size)
+                temp_tcr = TranscriptCreator(videopath,video_topic=self.video_topic,video_id=self.video_ids[i],minimize_size=minimize_size,upload_to_db=upload_to_db)
                 temp_tcr.vad_detection(vad_model)
                 temp_tcr.separatetracks(temp_tcr.vad)
                 i=i+1
@@ -172,7 +198,7 @@ class Batch_TranscriptCreator():
 
         i=0
         for videopath in self.videopaths:
-            temp_tcr = TranscriptCreator(videopath,video_topic=self.video_topic,video_id=self.video_ids[i],minimize_size=minimize_size)
+            temp_tcr = TranscriptCreator(videopath,video_topic=self.video_topic,video_id=self.video_ids[i],minimize_size=minimize_size,upload_to_db=upload_to_db)
             self.basic_model.append(temp_tcr.speechtotext(transcribe_model,decoder))
             i=i+1
             del temp_tcr
@@ -185,7 +211,7 @@ class Batch_TranscriptCreator():
         punctuate_model = nemo_nlp.models.PunctuationCapitalizationModel.restore_from(self.punctuate_model_path)
         i=0
         for videopath in self.videopaths:
-            temp_tcr = TranscriptCreator(videopath,video_topic=self.video_topic,video_id=self.video_ids[i],minimize_size=minimize_size)
+            temp_tcr = TranscriptCreator(videopath,video_topic=self.video_topic,video_id=self.video_ids[i],minimize_size=minimize_size,upload_to_db=upload_to_db)
             self.punctuated_op.append(temp_tcr.full_punctuate(punctuate_model))
             i=i+1
             del temp_tcr
@@ -199,7 +225,7 @@ class Batch_TranscriptCreator():
         unmasker = pipeline(task = 'fill-mask', model=model,tokenizer = tokenizer,device=-1,top_k=1)
         i=0
         for videopath in self.videopaths:
-            temp_tcr = TranscriptCreator(videopath,video_topic=self.video_topic,video_id=self.video_ids[i],minimize_size=minimize_size)
+            temp_tcr = TranscriptCreator(videopath,video_topic=self.video_topic,video_id=self.video_ids[i],minimize_size=minimize_size,upload_to_db=upload_to_db)
             self.mlm_op.append(temp_tcr.correct_by_masking(unmasker,punctuate_model_path= punctuate_model))
             i=i+1
             del temp_tcr
@@ -216,7 +242,7 @@ class Batch_TranscriptCreator():
             spell_checker_model._from_pretrained(ckpt_path = self.spellcheck_model_path,vocab_path = os.path.join(self.spellcheck_model_path,'vocab.pkl'))
             i=0
             for videopath in self.videopaths:
-                temp_tcr = TranscriptCreator(videopath,video_topic=self.video_topic,video_id=self.video_ids[i],minimize_size=minimize_size)
+                temp_tcr = TranscriptCreator(videopath,video_topic=self.video_topic,video_id=self.video_ids[i],minimize_size=minimize_size,upload_to_db=upload_to_db)
                 self.spell_checked_op.append(temp_tcr.spellcheck(query = '' ,spellcheck_model_path= spell_checker_model))
                 i=i+1
                 del temp_tcr
@@ -271,10 +297,10 @@ class Batch_TranscriptCreator():
 
 
 class TranscriptCreator():
-    def __init__(self,videopath,savedirectory='',video_topic='Computer Science',baserootpath = '/home/divyansh/Documents/Capstone',video_id = '',minimize_size=False,make_new=False):
+    def __init__(self,videopath,savedirectory='',video_topic='Computer Science',baserootpath = '/home/divyansh/Documents/Capstone',video_id = '',minimize_size=False,make_new=False,upload_to_db = True):
         self.base_path=baserootpath
         self.original_videopath = videopath
-
+        self.upload_to_db = upload_to_db
         vdname = os.path.basename(videopath).replace(".","")
         if not video_id=='':
             vdname = str(video_id) +'_' + vdname
@@ -821,7 +847,8 @@ class TranscriptCreator():
         
         self.human_review={}
         self.full_transcript_corrected=""
-
+        if self.transcribe_full=='':
+            return ''
         if self.mlm_full==None or self.errors_mlm==None:
             self.load_mlm_pipeline(bert_model)
             fstr = ""
@@ -891,6 +918,8 @@ class TranscriptCreator():
 
 
     def upload_to_firebasedb(self,firebase_config_path='',cred_file_path=''):
+        if not self.upload_to_db:
+            return None
         import firebase_admin
         from firebase_admin import credentials
         from firebase_admin import firestore
@@ -940,12 +969,10 @@ class TranscriptCreator():
                     wv,sr = torchaudio.load(trackname)
                     if sr != 16000:
                         wv = torchaudio.functional.resample(wv, sr, 16000)
-                    start1 = int(start*ratio)
-                    end1 = int(end*ratio)
                     if os.path.exists('temp.wav'):
                         os.remove('temp.wav')
-                    torchaudio.save('temp.wav', wv[:, start1:end1], 16000)
-                    saveFile1 = storage.child(uid + '_small').put('temp.wav')
+                    torchaudio.save('temp.wav', wv[:, start:end], 16000)
+                    saveFile1 = storage.child(uid + '.wav').put('temp.wav')
                     audio1 = storage.child(saveFile1['name']).get_url(saveFile1['downloadTokens'])
                     collection_obj.document(uid).create({'video_id':self.video_id,
                                                         'track_name':error['start_trackname'],
@@ -955,7 +982,8 @@ class TranscriptCreator():
                                                         "transcript": origsent,
                                                         "mask_query":mask_query,
                                                         "fine_tuned":False,
-                                                        "topic_path":self.topic_path})    
+                                                        "topic_path":self.topic_path,
+                                                        "submitted_word":''})    
 
 
 
