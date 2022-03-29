@@ -8,6 +8,13 @@ Conda environment.yml file also available at gdrive folder
 
 Current Word Error Metrics
 
+Data: Video provided by InnoDatatics for transcript generation
+
+Base Model: 33.1
+
+Final Output: 39.4
+
+
 Dataset:Timit_ASR
 
 Base Model: 2.5
