@@ -5,16 +5,22 @@ Transcript Creation Project for Video to Text
 https://drive.google.com/drive/folders/12lbjthkwMM3quCmC4vPZciYY6C4A7Y-R?usp=sharing
 
 Current Word Error Metrics
+
 Dataset:Timit_ASR
+
 Base Model: 5.9
+
 Final Output: 6.2
 
 Datset Ami Corpus(To be revised)
+
 Base Model: 7.1
+
 Final Output: 5.9
 
 
 Error Metrics are calculated with punctuated text instead of unpunctuated text.
+
 This is due to the requirements by question answer models using punctuations as context information
 
 
@@ -51,6 +57,7 @@ abc = INNO_TranscriptCreator.TranscriptCreator(videopath = "S2.mp4",topic = 'Com
 #Using pyannote-audio pipeline and pretrained model
 
 Pipelines from pyannote-audio: 'Diarization' and 'Voice Activity Detection'
+
 https://github.com/pyannote/pyannote-audio
 
 abc.diarization()
@@ -100,20 +107,31 @@ abc.create_transcript()
 
 
 Using Batch Creation:
+
 You can use Batch_TranscriptCreator by giving a list of videopaths and corresponding video Ids to create transcripts of a batch of videos
+
 Then call create_transcript() on above batch creator to create the transcripts
+
 This will create the transcripts and will be available in:
+
 self.basic_model for  HuBERT output
 
 self.punctuated_op for Punctuated Output of BERT MLM model
+
 self.mlm_op for BERT MLM model
+
 self.spell_checked_op for Spell Checked Output of MLM model(only if do_spell_check=True in create_transcript())
 
 Using Evaluator for Metrics
+
 This only works for huggingface datasets
+
 just call the class with the dataset name (must be one from ['timit_asr','superb','librispeech_asr'])
+
 after creation of all transcripts
+
 call evaluate_metrics to get a list of all metrics
+
 
 
 
