@@ -4,6 +4,18 @@ Transcript Creation Project for Video to Text
 #Data and Checkpoints available at
 https://drive.google.com/drive/folders/12lbjthkwMM3quCmC4vPZciYY6C4A7Y-R?usp=sharing
 
+Current Word Error Metrics
+Dataset:Timit_ASR
+Base Model: 5.9
+Final Output: 6.2
+
+Datset Ami Corpus(To be revised)
+Base Model: 7.1
+Final Output: 5.9
+
+
+Error Metrics are calculated with punctuated text instead of unpunctuated text.
+This is due to the requirements by question answer models using punctuations as context information
 
 
 Usage:
