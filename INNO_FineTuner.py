@@ -224,10 +224,11 @@ class MLM_Model_FineTuner():
         self.train_dataset=[self.prepare_dataset(data) for data in dataset]
         self.eval_dataset = self.train_dataset
         self.data_collator = dcl = DataCollatorforMLM(tokenizer = self.mlm_tokenizer,padding = True)
-        #self.checkfortokens(tokens)
+        #
         self.create_trainer()
         self.bfr_train_eval = self.trainer.evaluate()
         self.trainer.train()
+        self.checkfortokens(tokens)
         self.aftr_train_eval = self.trainer.evaluate()
         self.trainer.save_model(self.mlm_model_path)
         print(math.exp(self.bfr_train_eval['eval_loss']) , math.exp(self.aftr_train_eval['eval_loss']))
