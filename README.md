@@ -160,7 +160,15 @@ It will print the before and after training metrics from the finetuning operatio
 
 For Human Review System
 
-#to be updated
+https://aispry-174a7.web.app/
+
+Go to this link
+
+Listen to the audio on top
+
+Write in the word you listen at the [MASK] token into the text box
+
+Click Submit
 
 
 
