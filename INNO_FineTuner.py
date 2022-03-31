@@ -85,7 +85,9 @@ class FineTuner():
             gtruths =[]
             mlm_dataset=[]
             for doc in topic:
-                wv,sr = torchaudio.load(doc.audio_link)
+                import requests
+                with requests.get(doc.audio_link, stream=True) as response:
+                    wv,sr = torchaudio.load(response.raw)
                 if sr != 16000:
                     arr = torchaudio.functional.resample(arr, sr, 16000)
                 if wv.shape[0]>1:
@@ -209,7 +211,7 @@ class MLM_Model_FineTuner():
     def checkfortokens(self,tokens):
         vocab_tokens = self.mlm_tokenizer.get_vocab()
         toadd=[]
-        print(tokens)
+        #print(tokens)
         for token in tokens:
             if not token.upper() in vocab_tokens:
                 toadd.append(token.upper())
@@ -255,7 +257,7 @@ class MLM_Model_FineTuner():
 
         # batched output is "un-batched" to ensure mapping is correct
         #batch["input_values"] = np.squeeze(batch["array"].numpy()).transpose()
-        print(batch)
+        #print(batch)
         batch['text'] = batch['mask_text']
         batch['input_ids']  = np.squeeze(self.mlm_tokenizer(batch['text'],return_tensors = 'pt')['input_ids'].numpy())
         batch['labels'] = np.squeeze(self.mlm_tokenizer(batch['ground_truth'],return_tensors = 'pt')['input_ids'].numpy())
@@ -319,7 +321,7 @@ class Hubert_Model_FineTuner():
     def checkfortokens(self,tokens):
         vocab_tokens = self.decoder.tokenizer.get_vocab()
         toadd=[]
-        print(tokens)
+        #print(tokens)
         for token in tokens:
             if not token in vocab_tokens:
                 toadd.append(token)
@@ -344,11 +346,11 @@ class Hubert_Model_FineTuner():
         self.load_transcribe_model(transcribe_model_path)
         self.checkfortokens(tokens)
         self.create_trainer()
-        self.bfr_train_eval = self.trainer.evaluate()
+        #self.bfr_train_eval = self.trainer.evaluate()
         self.trainer.train()
-        self.aftr_train_eval = self.trainer.evaluate()
+        #self.aftr_train_eval = self.trainer.evaluate()
         self.trainer.save_model(self.audio_to_text_model_path)
-        print(self.bfr_train_eval,self.aftr_train_eval)
+        #print(self.bfr_train_eval,self.aftr_train_eval)
         del self.transcribe_model
         del self.decoder
 
@@ -385,7 +387,7 @@ class Hubert_Model_FineTuner():
 
         # batched output is "un-batched" to ensure mapping is correct
         #batch["input_values"] = np.squeeze(batch["array"].numpy()).transpose()
-        print(batch)
+        #print(batch)
         batch["input_values"] = proc.feature_extractor(batch["array"], sampling_rate=batch["sampling_rate"]).input_values[0]
         #print(batch["array"].shape,batch["input_values"].shape)
         batch["input_values"] = np.squeeze(batch["input_values"])
