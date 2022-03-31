@@ -22,14 +22,7 @@ import time
 from datasets import load_dataset
 import jiwer
 from pydub import AudioSegment
-import json
-
-
-class FirebaseDB:
-    def __init__(self,config='',) -> None:
-        aa=11
-
-        
+import json   
         
 
 
@@ -170,10 +163,10 @@ class Batch_TranscriptCreator():
                 i=i+1
                 del temp_tcr
 
-            print('Unloading Model Cuda Memory Allocated:' , torch.cuda.memory_allocated(0))
+            #print('Unloading Model Cuda Memory Allocated:' , torch.cuda.memory_allocated(0))
             del diarize_model
             torch.cuda.empty_cache()
-            print('Unloaded Model Cuda Memory Allocated:' , torch.cuda.memory_allocated(0))
+            #print('Unloaded Model Cuda Memory Allocated:' , torch.cuda.memory_allocated(0))
             
         else:
             from pyannote.audio import Pipeline
@@ -186,10 +179,10 @@ class Batch_TranscriptCreator():
                 i=i+1
                 del temp_tcr
 
-            print('Unloading Model Cuda Memory Allocated:' , torch.cuda.memory_allocated(0))
+            #print('Unloading Model Cuda Memory Allocated:' , torch.cuda.memory_allocated(0))
             del vad_model
             torch.cuda.empty_cache()
-            print('Unloaded Model Cuda Memory Allocated:' , torch.cuda.memory_allocated(0))
+            #print('Unloaded Model Cuda Memory Allocated:' , torch.cuda.memory_allocated(0))
 
                
         
@@ -202,10 +195,10 @@ class Batch_TranscriptCreator():
             self.basic_model.append(temp_tcr.speechtotext(transcribe_model,decoder))
             i=i+1
             del temp_tcr
-        print('Unloading Model Cuda Memory Allocated:' , torch.cuda.memory_allocated(0))
+        #print('Unloading Model Cuda Memory Allocated:' , torch.cuda.memory_allocated(0))
         del transcribe_model,decoder
         torch.cuda.empty_cache()
-        print('Unloaded Model Cuda Memory Allocated:' , torch.cuda.memory_allocated(0))
+        #print('Unloaded Model Cuda Memory Allocated:' , torch.cuda.memory_allocated(0))
         from nemo.utils.exp_manager import exp_manager
         from nemo.collections import nlp as nemo_nlp
         punctuate_model = nemo_nlp.models.PunctuationCapitalizationModel.restore_from(self.punctuate_model_path)
@@ -215,10 +208,10 @@ class Batch_TranscriptCreator():
             self.punctuated_op.append(temp_tcr.full_punctuate(punctuate_model))
             i=i+1
             del temp_tcr
-        print('Unloading Model Cuda Memory Allocated:' , torch.cuda.memory_allocated(0))
+        #print('Unloading Model Cuda Memory Allocated:' , torch.cuda.memory_allocated(0))
         #del punctuate_model
         torch.cuda.empty_cache()
-        print('Unloaded Model Cuda Memory Allocated:' , torch.cuda.memory_allocated(0))
+        #print('Unloaded Model Cuda Memory Allocated:' , torch.cuda.memory_allocated(0))
 
         tokenizer = BertTokenizer.from_pretrained(self.mlm_model_path)
         model = BertForMaskedLM.from_pretrained(self.mlm_model_path)
@@ -229,10 +222,10 @@ class Batch_TranscriptCreator():
             self.mlm_op.append(temp_tcr.correct_by_masking(unmasker,punctuate_model_path= punctuate_model))
             i=i+1
             del temp_tcr
-        print('Unloading Model Cuda Memory Allocated:' , torch.cuda.memory_allocated(0))
+        #print('Unloading Model Cuda Memory Allocated:' , torch.cuda.memory_allocated(0))
         del tokenizer,model,unmasker,punctuate_model
         torch.cuda.empty_cache()
-        print('Unloaded Model Cuda Memory Allocated:' , torch.cuda.memory_allocated(0))
+        #print('Unloaded Model Cuda Memory Allocated:' , torch.cuda.memory_allocated(0))
         
 
 
@@ -246,10 +239,10 @@ class Batch_TranscriptCreator():
                 self.spell_checked_op.append(temp_tcr.spellcheck(query = '' ,spellcheck_model_path= spell_checker_model))
                 i=i+1
                 del temp_tcr
-            print('Unloading Model Cuda Memory Allocated:' , torch.cuda.memory_allocated(0))
+            #print('Unloading Model Cuda Memory Allocated:' , torch.cuda.memory_allocated(0))
             del spell_checker_model
             torch.cuda.empty_cache()
-            print('Unloaded Model Cuda Memory Allocated:' , torch.cuda.memory_allocated(0))
+            #print('Unloaded Model Cuda Memory Allocated:' , torch.cuda.memory_allocated(0))
 
 
 
@@ -343,7 +336,7 @@ class TranscriptCreator():
                 sound = AudioSegment.from_mp3(self.videopath)
                 sound.export(self.audiopath, format="wav")
             else:
-                print(self.videopath)
+                #print(self.videopath)
                 import moviepy.editor as mp
                 clip = mp.VideoFileClip(self.videopath)
                 clip.audio.write_audiofile(self.audiopath)
@@ -357,7 +350,7 @@ class TranscriptCreator():
             fpath = filepath
         
         if os.path.exists(fpath):
-            print(fpath)
+            #print(fpath)
             with open(fpath, 'rb') as inp:
                 return pickle.load(inp)
         else:
@@ -470,7 +463,7 @@ class TranscriptCreator():
         if not hasattr(self,'mlm_unmasker'):
             if type(model_path)==str and model_path!='':
                 self.mlm_tokenizer = BertTokenizer.from_pretrained(model_path)
-                self.mlm_model = BertForMaskedLM.from_pretrained(model_path)
+                self.mlm_model = BertForMaskedLM.from_pretrained(model_path).to(device)
                 self.mlm_unmasker = pipeline(task = 'fill-mask', model=self.mlm_model,tokenizer = self.mlm_tokenizer,device=-1,top_k=1)
             elif not type(model_path)==str:
                 self.mlm_unmasker = model_path
@@ -494,7 +487,7 @@ class TranscriptCreator():
             torch.cuda.empty_cache()
             self.correct_by_masking()
             torch.cuda.empty_cache()
-            self.spellcheck()
+            #self.spellcheck()
             torch.cuda.empty_cache()
         else:
             self.vad_detection()
@@ -506,17 +499,16 @@ class TranscriptCreator():
             torch.cuda.empty_cache()
             self.correct_by_masking()
             torch.cuda.empty_cache()
-            self.spellcheck()
+            #self.spellcheck()
             torch.cuda.empty_cache()
         
         if delete_folder:
             os.removedirs(self.directory)
 
 
-        return dict(Basic_Transcript = self.transcript['full_transcript'],
-            Corrected_Transcript = self.full_transcript_corrected,
-            Spell_Checked = self.spell_checked_1,
-            Full_Punctuated = self.transcript['Full_Punctuated'] )
+        return dict(Basic_Transcript = self.transcribe_op,
+            Corrected_Transcript = self.mlm_full,
+            Full_Punctuated = self.punctuate_full )
 
 
     def initialize_env(self):
@@ -574,7 +566,7 @@ class TranscriptCreator():
         
         if not os.path.exists(self.diarize_path):
             self.load_diarize_model(model_path=model)
-            print("Doing Diarization")
+            #print("Doing Diarization")
             self.diarized = self.diarize_model(self.audiopath)
             self.writepkl(self.diarized,self.diarize_path)
             del self.diarize_model
@@ -583,12 +575,12 @@ class TranscriptCreator():
         
         if not os.path.exists(self.vad_path):
             self.load_vad_model(model)
-            print("Doing Voice Activity Detection")
+            #print("Doing Voice Activity Detection")
             self.vad = self.vad_model(self.audiopath)
             self.writepkl(self.vad,self.vad_path)
             del self.vad_model
    
-    def separatetracks(self,segment_input,max_pause = 1.0, max_speakers = 1,maxduration=60,make_new = False):
+    def separatetracks(self,segment_input,max_pause = 0.5, max_speakers = 1,maxduration=60,make_new = False):
         
         if make_new:
             files = glob.glob(self.directory+ '/*.wav')
@@ -664,14 +656,14 @@ class TranscriptCreator():
             self.transcribe_op = {}
             self.transcribe_full=''
         
-            print("Model Loaded")
+            #print("Model Loaded")
             
             #return '0'
         
             for track in self.tracks:
                 trackdictname = os.path.basename(track)
                 self.transcribe_op[trackdictname]={}
-                print("Loading Track:" + track)
+                #print("Loading Track:" + track)
                 waveform, sample_rate = torchaudio.load(track)
                 #waveform = waveform.to(device)
                 if sample_rate != 16000:
@@ -783,7 +775,7 @@ class TranscriptCreator():
         if self.punctuate_full==None:
 
             self.load_punctuate_model(model_path)
-            print("loading form pretrained")
+            #print("loading form pretrained")
             query = [self.transcribe_full.lower()]
 
             self.punctuate_full = self.return_punctuated(query,model_path)[0]
@@ -899,7 +891,7 @@ class TranscriptCreator():
                 if self.mlm_full=="" or self.mlm_full == None:
                     self.mlm_full = full_sent
                 else:
-                    self.mlm_full = self.mlm_full + ". " + full_sent
+                    self.mlm_full = self.mlm_full + full_sent
     
     
     
@@ -924,7 +916,7 @@ class TranscriptCreator():
         from firebase_admin import credentials
         from firebase_admin import firestore
         import pyrebase
-        print(self.videopath)
+        #print(self.videopath)
         if firebase_config_path=='':
             self.firebase_config_path = os.path.join(self.base_path,'firebase_config.json')
         else:
