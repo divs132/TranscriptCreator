@@ -155,7 +155,6 @@ It will automatically extract completed human reviews from the direbase db
 
 Then it will fine tune the individual topic models and update the models by calling start_finetune on the Fine_Tuner object
 
-It will print the before and after training metrics from the finetuning operation
 
 
 For Human Review System
