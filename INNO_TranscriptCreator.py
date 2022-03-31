@@ -33,9 +33,9 @@ class TranscriptCreator_Evaluator:
         baserootpath = '/home/divyansh/Documents/Capstone',delete_folders = True,
         diarize = False,do_spell_check = False,max_test=0,
         minimize_size=False,
-        upload_to_db=False):
+        upload_to_db=False,load_models = True):
         if not dataset_name in ['timit_asr','superb','librispeech_asr','ami','common']:
-            raise NotImplementedError("Please use one of the specified test dbs for the evaluator:'timit_asr','superb','librispeech_asr'",)
+            raise NotImplementedError("Please use one of the specified test dbs for the evaluator:'timit_asr','superb','librispeech_asr','ami','common'",)
 
         if dataset_name == 'timit_asr':
             dbset = load_dataset('timit_asr',split='test')
@@ -81,12 +81,12 @@ class TranscriptCreator_Evaluator:
             v_ids =v_ids[0:max_test]
 
         self.batcher = Batch_TranscriptCreator(videopaths = vpaths,video_ids = v_ids,groundtruths = gtruths,diarize=diarize,delete_folders=delete_folders,video_topic=video_topic,baserootpath=baserootpath)
-        self.batcher.create_transcript(do_spell_check=self.do_spell_check,upload_to_db=upload_to_db)
+        self.batcher.create_transcript(do_spell_check=self.do_spell_check,upload_to_db=upload_to_db,load_model = load_models)
         self.metrics = self.evaluate_metrics(self.batcher)
         
 
     def evaluate_metrics(self,btr,transformation = ''):
-        transformation = jiwer.Compose([
+        transformationcstm = jiwer.Compose([
             jiwer.ToLowerCase(),
             jiwer.RemovePunctuation(),
             jiwer.RemoveWhiteSpace(replace_by_space=True),
@@ -94,8 +94,8 @@ class TranscriptCreator_Evaluator:
             jiwer.ReduceToListOfListOfWords(word_delimiter=" ")
         ]) 
 
-        if not transformation=='':
-            transformation=transformation
+        if transformation=='':
+            transformation=transformationcstm
 
 
         self.wer1 = jiwer.wer(btr.ground_truth, btr.basic_model,truth_transform=transformation,hypothesis_transform=transformation)
@@ -150,11 +150,14 @@ class Batch_TranscriptCreator():
         
 
 
-    def create_transcript(self,do_spell_check=False,minimize_size=False,upload_to_db=True):
+    def create_transcript(self,do_spell_check=False,minimize_size=False,upload_to_db=True,load_model=True):
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         if self.do_diarization:
             from pyannote.audio import Pipeline
-            diarize_model = Pipeline.from_pretrained(self.diarize_model_path)
+            if load_model:
+                diarize_model = Pipeline.from_pretrained(self.diarize_model_path)
+            else:
+                diarize_model= 1
             i=0
             for videopath in self.videopaths:
                 temp_tcr = TranscriptCreator(videopath,video_topic=self.video_topic,video_id=self.video_ids[i],minimize_size=minimize_size,upload_to_db=upload_to_db)
@@ -170,7 +173,11 @@ class Batch_TranscriptCreator():
             
         else:
             from pyannote.audio import Pipeline
-            vad_model = Pipeline.from_pretrained(self.vad_model_path)
+            if load_model:
+                vad_model = Pipeline.from_pretrained(self.vad_model_path)
+            else:
+                vad_model= 1
+            
             i=0
             for videopath in self.videopaths:
                 temp_tcr = TranscriptCreator(videopath,video_topic=self.video_topic,video_id=self.video_ids[i],minimize_size=minimize_size,upload_to_db=upload_to_db)
@@ -185,9 +192,13 @@ class Batch_TranscriptCreator():
             #print('Unloaded Model Cuda Memory Allocated:' , torch.cuda.memory_allocated(0))
 
                
-        
-        transcribe_model = HubertForCTC.from_pretrained(self.audio_to_text_model_path).to(device)
-        decoder = AutoProcessor.from_pretrained(self.audio_to_text_tokenizer_path)
+        if load_model:
+            transcribe_model = HubertForCTC.from_pretrained(self.audio_to_text_model_path).to(device)
+            decoder = AutoProcessor.from_pretrained(self.audio_to_text_tokenizer_path)
+        else:
+            transcribe_model = 1
+            decoder = 1
+
 
         i=0
         for videopath in self.videopaths:
@@ -201,7 +212,11 @@ class Batch_TranscriptCreator():
         #print('Unloaded Model Cuda Memory Allocated:' , torch.cuda.memory_allocated(0))
         from nemo.utils.exp_manager import exp_manager
         from nemo.collections import nlp as nemo_nlp
-        punctuate_model = nemo_nlp.models.PunctuationCapitalizationModel.restore_from(self.punctuate_model_path)
+        if load_model:
+            punctuate_model = nemo_nlp.models.PunctuationCapitalizationModel.restore_from(self.punctuate_model_path)
+        else:
+            punctuate_model = 1
+        
         i=0
         for videopath in self.videopaths:
             temp_tcr = TranscriptCreator(videopath,video_topic=self.video_topic,video_id=self.video_ids[i],minimize_size=minimize_size,upload_to_db=upload_to_db)
@@ -213,9 +228,15 @@ class Batch_TranscriptCreator():
         torch.cuda.empty_cache()
         #print('Unloaded Model Cuda Memory Allocated:' , torch.cuda.memory_allocated(0))
 
-        tokenizer = BertTokenizer.from_pretrained(self.mlm_model_path)
-        model = BertForMaskedLM.from_pretrained(self.mlm_model_path)
-        unmasker = pipeline(task = 'fill-mask', model=model,tokenizer = tokenizer,device=-1,top_k=1)
+        if load_model:
+            tokenizer = BertTokenizer.from_pretrained(self.mlm_model_path)
+            model = BertForMaskedLM.from_pretrained(self.mlm_model_path)
+            unmasker = pipeline(task = 'fill-mask', model=model,tokenizer = tokenizer,device=-1,top_k=1)
+        else:
+            tokenizer = 1
+            model = 1
+            unmasker = 1
+        
         i=0
         for videopath in self.videopaths:
             temp_tcr = TranscriptCreator(videopath,video_topic=self.video_topic,video_id=self.video_ids[i],minimize_size=minimize_size,upload_to_db=upload_to_db)
@@ -231,8 +252,12 @@ class Batch_TranscriptCreator():
 
         if do_spell_check:
             from neuspell import available_checkers, BertChecker
-            spell_checker_model = BertChecker(device="cuda")
-            spell_checker_model._from_pretrained(ckpt_path = self.spellcheck_model_path,vocab_path = os.path.join(self.spellcheck_model_path,'vocab.pkl'))
+            if load_model:
+                spell_checker_model = BertChecker(device="cuda")
+                spell_checker_model._from_pretrained(ckpt_path = self.spellcheck_model_path,vocab_path = os.path.join(self.spellcheck_model_path,'vocab.pkl'))
+            else:
+                spell_checker_model = 1
+            
             i=0
             for videopath in self.videopaths:
                 temp_tcr = TranscriptCreator(videopath,video_topic=self.video_topic,video_id=self.video_ids[i],minimize_size=minimize_size,upload_to_db=upload_to_db)
@@ -649,7 +674,7 @@ class TranscriptCreator():
             if self.videopath in self.tracks:
                 self.tracks.remove(self.videopath)
       
-        if self.transcribe_op==None and not make_new:
+        if self.transcribe_op==None or make_new:
             self.full_transcript = ''
             self.load_transcribe_model(wav2vec2typemodel)
             self.load_transcribe_decoder(processorwithlmhead)
@@ -947,7 +972,7 @@ class TranscriptCreator():
                 end = error['end_sent']
                 ratio = error['start_track_ratio']
                 trackname = error['start_trackname']
-                uid = str(self.video_id) + '_' + str(trackname) + '_' + str(start) + '_' + str(end)
+                uid = str(self.video_id) + '_' + str(trackname).replace(".","") + '_' + str(start) + '_' + str(end)
                 mlm_sentence = error['mlm_sentence']
                 origword = error['orig_word']
                 origsent = error['orig_sentence']

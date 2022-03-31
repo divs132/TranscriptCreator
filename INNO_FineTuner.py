@@ -224,7 +224,6 @@ class MLM_Model_FineTuner():
         self.train_dataset=[self.prepare_dataset(data) for data in dataset]
         self.eval_dataset = self.train_dataset
         self.data_collator = dcl = DataCollatorforMLM(tokenizer = self.mlm_tokenizer,padding = True)
-        #
         self.create_trainer()
         self.bfr_train_eval = self.trainer.evaluate()
         self.trainer.train()
