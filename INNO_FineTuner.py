@@ -1,4 +1,6 @@
-import os,json,torchaudio
+import os
+import json
+import torchaudio
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Union
 from transformers import Wav2Vec2ProcessorWithLM
@@ -29,7 +31,7 @@ class hrecord(object):
         self.video_id=video_id
 
 def from_dict(source):
-        hrc = hrecord(
+    hrc = hrecord(
         source['audio1'],
         source['correctedTranscript'],
         source['feedback'],
@@ -40,7 +42,7 @@ def from_dict(source):
         source['track_name'],
         source['transcript'],
         source['video_id'])
-        return hrc
+    return hrc
 
 class FineTuner():
     def __init__(self,firebase_config_path='',cred_file_path='',baserootpath='/home/divyansh/Documents/Capstone',
@@ -59,8 +61,6 @@ class FineTuner():
             data = f.read()
         
         self.firebase_config = json.loads(data)
-        firebase = pyrebase.initialize_app(self.firebase_config)
-        storage=firebase.storage()
         cred = credentials.Certificate(self.cred_path)
         if not firebase_admin._apps:
             firebase_admin.initialize_app(cred)
@@ -134,7 +134,6 @@ class DataCollatorforMLM:
         # different padding methods
         #print(features)
         input_features = [{"input_ids": feature["input_ids"]} for feature in features]
-        label_features = [{"input_ids": feature["labels"]} for feature in features]
         #print(input_features)
         batch = self.tokenizer.pad(
             input_features,
@@ -143,8 +142,6 @@ class DataCollatorforMLM:
             pad_to_multiple_of=self.pad_to_multiple_of,
             return_tensors="pt",
         )
-        #print(batch)
-        special_tokens_mask = batch.pop("special_tokens_mask", None)
         labels = batch["input_ids"].clone()
         if self.tokenizer.pad_token_id is not None:
             labels[labels == self.tokenizer.pad_token_id] = -100
@@ -204,7 +201,6 @@ class MLM_Model_FineTuner():
         self.output_dir = out_dir
         self.initialize_topic()
         self.ground_truths = ground_truths
-        pass
     
 
 
@@ -225,7 +221,7 @@ class MLM_Model_FineTuner():
         self.load_mlm_pipeline(mlm_model_path)
         self.train_dataset=[self.prepare_dataset(data) for data in dataset]
         self.eval_dataset = self.train_dataset
-        self.data_collator = dcl = DataCollatorforMLM(tokenizer = self.mlm_tokenizer,padding = True)
+        self.data_collator = DataCollatorforMLM(tokenizer = self.mlm_tokenizer,padding = True)
         self.create_trainer()
         self.bfr_train_eval = self.trainer.evaluate()
         self.trainer.train()
@@ -308,14 +304,6 @@ class Hubert_Model_FineTuner():
         self.output_dir = out_dir
         self.initialize_topic()
         self.ground_truths = ground_truths
-        
-        
-
-
-
-
-        pass
-    
 
 
     def checkfortokens(self,tokens):

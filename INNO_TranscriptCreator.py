@@ -1,30 +1,24 @@
-import os
-import shutil
-from typing import Tuple
-import pickle
-
-import soundfile as sf
+import glob
+import json
 import math
+import os
+import pickle
+import shutil
+import time
+from itertools import repeat, zip_longest
+from typing import Tuple
+
+import jiwer
+import nltk
+import regex as re
+import soundfile as sf
 import torch
 import torchaudio
-from transformers import AutoProcessor, HubertForCTC
-
-import regex as re
-import glob
-from nltk.tokenize import sent_tokenize
-
-from itertools import zip_longest 
-from transformers import BertTokenizer, BertForMaskedLM
-from transformers import pipeline
-import nltk
-from itertools import repeat
-import time
 from datasets import load_dataset
-import jiwer
+from nltk.tokenize import sent_tokenize
 from pydub import AudioSegment
-import json   
-        
-
+from transformers import (AutoProcessor, BertForMaskedLM, BertTokenizer,
+                          HubertForCTC, pipeline)
 
 
 class TranscriptCreator_Evaluator:
@@ -210,8 +204,8 @@ class Batch_TranscriptCreator():
         del transcribe_model,decoder
         torch.cuda.empty_cache()
         #print('Unloaded Model Cuda Memory Allocated:' , torch.cuda.memory_allocated(0))
-        from nemo.utils.exp_manager import exp_manager
         from nemo.collections import nlp as nemo_nlp
+        from nemo.utils.exp_manager import exp_manager
         if load_model:
             punctuate_model = nemo_nlp.models.PunctuationCapitalizationModel.restore_from(self.punctuate_model_path)
         else:
@@ -251,7 +245,7 @@ class Batch_TranscriptCreator():
 
 
         if do_spell_check:
-            from neuspell import available_checkers, BertChecker
+            from neuspell import BertChecker, available_checkers
             if load_model:
                 spell_checker_model = BertChecker(device="cuda")
                 spell_checker_model._from_pretrained(ckpt_path = self.spellcheck_model_path,vocab_path = os.path.join(self.spellcheck_model_path,'vocab.pkl'))
@@ -461,8 +455,8 @@ class TranscriptCreator():
                 self.decoder = AutoProcessor.from_pretrained(self.audio_to_text_tokenizer_path)
   
     def load_punctuate_model(self,model_path):
-        from nemo.utils.exp_manager import exp_manager
         from nemo.collections import nlp as nemo_nlp
+        from nemo.utils.exp_manager import exp_manager
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         if not hasattr(self,'punctuate_model'):
             if type(model_path)==str and model_path!='':
@@ -473,7 +467,7 @@ class TranscriptCreator():
                 self.punctuate_model = nemo_nlp.models.PunctuationCapitalizationModel.restore_from(self.punctuate_model_path)
 
     def load_spell_checker_model(self,model_path):
-        from neuspell import available_checkers, BertChecker
+        from neuspell import BertChecker, available_checkers
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         if not hasattr(self,'spell_checker_model'):
             if type(model_path)==str and model_path!='':
@@ -938,9 +932,9 @@ class TranscriptCreator():
         if not self.upload_to_db:
             return None
         import firebase_admin
-        from firebase_admin import credentials
-        from firebase_admin import firestore
         import pyrebase
+        from firebase_admin import credentials, firestore
+
         #print(self.videopath)
         if firebase_config_path=='':
             self.firebase_config_path = os.path.join(self.base_path,'firebase_config.json')
